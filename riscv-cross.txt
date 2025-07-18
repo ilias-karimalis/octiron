@@ -1,0 +1,18 @@
+[host_machine]
+system = 'unknown'
+cpu_family = 'riscv64'
+cpu = 'riscv64'
+endian = 'little'
+
+[binaries]
+c = '/opt/riscv/bin/riscv64-unknown-elf-gcc'
+cpp = '/opt/riscv/bin/riscv64-unknown-elf-g++'
+ar = '/opt/riscv/bin/riscv64-unknown-elf-ar'
+strip = '/opt/riscv/bin/riscv64-unknown-elf-strip'
+ranlib = '/opt/riscv/bin/riscv64-unknown-elf-ranlib'
+ld = '/opt/riscv/bin/riscv64-unknown-elf-ld'
+as = '/opt/riscv/bin/riscv64-unknown-elf-as'
+
+[env]
+PATH = '/opt/riscv/bin/:$PATH'
+
