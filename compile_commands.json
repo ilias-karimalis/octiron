@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/iliaskar/Documents/octiron-new/build/kernel",
+  "command": "/opt/riscv/bin/riscv64-unknown-elf-c++  -I/home/iliaskar/Documents/octiron-new/kernel/include -Wall -Werror -mcmodel=medany -ffreestanding -nostdlib -fno-exceptions -fno-stack-protector -fno-rtti -std=gnu++23 -o CMakeFiles/Kernel.elf.dir/src/kernel_entry.cpp.o -c /home/iliaskar/Documents/octiron-new/kernel/src/kernel_entry.cpp",
+  "file": "/home/iliaskar/Documents/octiron-new/kernel/src/kernel_entry.cpp"
+}
+]

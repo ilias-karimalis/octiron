@@ -1,33 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# This script is used to run QEMU with the specified parameters.
-# Usage: ./scripts/qemu.sh using_gdb bootloader_elf kernel_elf
+IMAGE_FILE=$1
+BIOS_FILE=$2
 
-set -xeuo pipefail
+qemu-system-riscv64 \
+    -machine virt \
+    -m 2G \
+    -cpu rv64 \
+    -device qemu-xhci \
+    -device usb-kbd \
+    -device usb-mouse \
+    -device ramfb \
+    -drive if=pflash,unit=0,format=raw,file=${BIOS_FILE},readonly=on \
+    -cdrom ${IMAGE_FILE} \
+    -display gtk \
+    -serial mon:stdio 
 
-# If using_gdb is true, start QEMU with GDB support.
-if [ "$1" -eq 0 ]; then
-    echo "Attach to this qemu process by running: gdb-multiarch $2 -ex \"set architecture:rv64\" -ex \"target remote localhost:1234\""
-    qemu-system-riscv64   \
-        -M virt           \
-        -cpu rv64         \
-        -smp 2            \
-        -m 4G             \
-        -nographic        \
-        -serial mon:stdio \
-        -bios default     \
-        -kernel "$2"     \
-        -s                \
-        -S
-    exit 0
-fi
-
-qemu-system-riscv64   \
-    -M virt           \
-    -cpu rv64         \
-    -smp 2            \
-    -m 4G             \
-    -nographic        \
-    -serial mon:stdio \
-    -kernel "$2"
-        # -bios default     \
