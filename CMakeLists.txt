@@ -2,10 +2,14 @@ cmake_minimum_required(VERSION 3.16)
 
 # Set the project name and version
 project(Octiron VERSION 1.0 LANGUAGES CXX)
+
+# set(CMAKE_SYSTEM_NAME Generic)
+# set(CMAKE_SYSTEM_PROCESSOR riscv64)
 set(CMAKE_CXX_STANDARD 26)
+# set(CMAKE_OSX_ARCHITECTURES riscv64)
 
 # Set the compiler, the path here will be different on other machines:
-set(CMAKE_CXX_COMPILER "/opt/riscv/bin/riscv64-unknown-elf-c++")
+# set(CMAKE_CXX_COMPILER "/opt/homebrew/bin/riscv64-elf-g++")
 
 # Make sure to generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

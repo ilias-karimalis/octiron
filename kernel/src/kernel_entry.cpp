@@ -41,5 +41,8 @@ kernel_cxx_entry()
         fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
     }
 
-    for (;;);
+    dt::print_device_tree();
+
+    for (;;)
+        ;
 }

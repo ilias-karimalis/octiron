@@ -1,15 +1,14 @@
-
-#include "fmt/assert.h"
-#include "panic.h"
-#include "types/byte_view.h"
-#include "types/error.h"
-#include "types/number.h"
-#include "types/str_view.h"
 #include <allocators/bump.h>
 #include <cinttypes>
 #include <cstring>
 #include <devices/device_tree.h>
+#include <fmt/assert.h>
+#include <panic.h>
+#include <types/byte_view.h>
+#include <types/error.h>
+#include <types/number.h>
 #include <types/stack.h>
+#include <types/str_view.h>
 
 namespace dt {
 
@@ -53,15 +52,16 @@ struct property
         DMA_COHERENCE,
         DEVICE_TYPE,
         RANGES,
-        /// Because the hierarchy of the nodes in the interrupt tree might not match the devicetree, the
-        /// interrupt-parent property is available to make the definition of an interrupt parent explicit. The value is
-        /// the phandle to the interrupt parent. If this property is missing from a device, its interrupt parent is
-        /// assumed to be its devicetree parent.
+        /// Because the hierarchy of the nodes in the interrupt tree might not match the devicetree,
+        /// the interrupt-parent property is available to make the definition of an interrupt parent
+        /// explicit. The value is the phandle to the interrupt parent. If this property is missing
+        /// from a device, its interrupt parent is assumed to be its devicetree parent.
         INTERRUPT_PARENT,
-        /// The presence of an interrupt-controller property defines a node as an interrupt controller node.
+        /// The presence of an interrupt-controller property defines a node as an interrupt
+        /// controller node.
         INTERRUPT_CONTROLLER,
-        /// The #interrupt-cells property defines the number of cells required to encode an interrupt specifier for an
-        /// interrupt domain.
+        /// The #interrupt-cells property defines the number of cells required to encode an
+        /// interrupt specifier for an interrupt domain.
         INTERRUPT_CELLS,
         ///
         INTERRUPT_MAP,
@@ -115,13 +115,23 @@ struct property
         } range;
         u32 virtual_reg;
         u32 interrupt_parent;
+        u32 interrupt_cells;
+        struct
+        {
+            size_t n_entries;
+            void* child_unit_addresses;
+            void* child_interrupt_specifiers;
+            void* interrupt_parents;
+            void* parent_unit_addresses;
+            void* parent_interrupt_specifiers;
+        };
     } data;
 };
 
 struct node
 {
     /// Name of the node.
-    const str_view name;
+    str_view name;
     /// The number of the <u32> cells used to encode the address field in this node's reg property.
     u32 address_cells;
     /// The number of the <u32> cells used to encode the size field in this node's reg property.
@@ -183,8 +193,8 @@ pre_parse_property(struct node* current, const u8* structures, const u8* strings
     byte_view property_value = byte_view(structures + offset, property_length);
     offset += align_up(property_length, sizeof(u32));
 
-    struct property* new_property =
-      properties.emplace_back(property_name, current->properties, property::type::RAW, property_value);
+    struct property* new_property = properties.emplace_back(
+      property_name, current->properties, property::type::RAW, property_value);
     current->properties = new_property;
     return offset;
 }
@@ -281,7 +291,12 @@ property_rewrite_reg(struct node* node, struct property* prop)
     size_t n_pairs = bv.length() / (address_size + size_size);
 
     assert(n_pairs > 0);
-    assert(bv.length() % (address_size + size_size) == 0, bv.length(), " ", address_size, " ", size_size);
+    assert(bv.length() % (address_size + size_size) == 0,
+           bv.length(),
+           " ",
+           address_size,
+           " ",
+           size_size);
     assert(node->parent->address_cells <= 3);
     assert(node->parent->size_cells <= 2);
 
@@ -344,11 +359,12 @@ recursive_property_rewrite(struct node* node)
                 }
             }
 
-            prop->data.compatible_array =
-              (str_view*)bump.alloc_aligned(sizeof(str_view*) * (num_strings + 1), sizeof(str_view*));
+            prop->data.compatible_array = (str_view*)bump.alloc_aligned(
+              sizeof(str_view*) * (num_strings + 1), sizeof(str_view*));
             assert(prop->data.compatible_array != nullptr);
             for (size_t i = 0, j = 0; i < raw_view.length(); j++) {
-                prop->data.compatible_array[j] = str_view::from_null_term((const char*)&raw_view[i]);
+                prop->data.compatible_array[j] =
+                  str_view::from_null_term((const char*)&raw_view[i]);
                 i += prop->data.compatible_array[j].length() + 1;
             }
             prop->data.compatible_array[num_strings] = str_view();
@@ -410,10 +426,24 @@ recursive_property_rewrite(struct node* node)
             prop->type = property::type::INTERRUPT_PARENT;
             prop->data.interrupt_parent = num::read_big_endian<u32>(prop->data.raw.data());
         } else if (str_view::compare("#interrupt-cells", prop->name) == 0) {
-
+            prop->type = property::type::INTERRUPT_CELLS;
+            prop->data.interrupt_cells = num::read_big_endian<u32>(prop->data.raw.data());
+        } else if (str_view::compare("interrupts", prop->name) == 0) {
+            //            todo("Implement parsing of 'interrupts' property");
+        } else if (str_view::compare("interrupt-map", prop->name) == 0) {
+            //            todo("Implement parsing of 'interrupt-map' property");
+        } else if (str_view::compare("interrupt-map-mask", prop->name) == 0) {
+            //            todo("Implement parsing of 'interrupt-map-mask' property");
+        } else if (str_view::compare("interrupt-controller", prop->name) == 0) {
+            prop->type = property::type::INTERRUPT_CONTROLLER;
+        } else if (str_view::compare("regmap", prop->name) == 0) {
+            //            todo("Implement parsing of 'regmap' property");
+        } else if (str_view::compare("value", prop->name) == 0) {
+            //            todo("Implement parsing of 'value' property");
         }
 
-        else if (str_view::compare("reg", prop->name) == 0 || str_view::compare("ranges", prop->name) == 0 ||
+        else if (str_view::compare("reg", prop->name) == 0 ||
+                 str_view::compare("ranges", prop->name) == 0 ||
                  str_view::compare("bus-ranges", prop->name) == 0) {
             // property_rewrite_ranges(node, prop);
         } else {
@@ -425,7 +455,8 @@ recursive_property_rewrite(struct node* node)
     for (struct property* prop = node->properties; prop != nullptr; prop = prop->next_property) {
         if (str_view::compare("reg", prop->name) == 0) {
             property_rewrite_reg(node, prop);
-        } else if (str_view::compare("ranges", prop->name) == 0 || str_view::compare("bus-ranges", prop->name) == 0) {
+        } else if (str_view::compare("ranges", prop->name) == 0 ||
+                   str_view::compare("bus-ranges", prop->name) == 0) {
             property_rewrite_ranges(node, prop);
         }
     }
@@ -457,7 +488,8 @@ parse_from_blob(const u8* dtb)
 
     u64* rsvmap = (u64*)(dtb + num::flip_endianness(hdr->offset_rsvmap));
     while (rsvmap[0] != 0 && rsvmap[1] != 0) {
-        reserved_regions.emplace_back(num::flip_endianness(rsvmap[0]), num::flip_endianness(rsvmap[1]));
+        reserved_regions.emplace_back(num::flip_endianness(rsvmap[0]),
+                                      num::flip_endianness(rsvmap[1]));
     }
 
     const u8* structures = dtb + num::flip_endianness(hdr->offset_structs);
@@ -503,7 +535,8 @@ parse_from_blob(const u8* dtb)
                 goto dtb_property_rewrite_pass;
 
             default:
-                panic("While parsing the device tree, found an unknown structure token type: ", fmt::hex(token));
+                panic("While parsing the device tree, found an unknown structure token type: ",
+                      fmt::hex(token));
         }
     }
 
@@ -522,6 +555,116 @@ dtb_property_rewrite_pass:
     }
 
     initialized = true;
+    root->name = str_view("/");
     return error(ErrorCode::SUCCESS);
+}
+
+void
+print_node_recursive(struct node* node, int depth)
+{
+    if (node == nullptr) {
+        return;
+    }
+
+    for (int i = 0; i < depth; i++) {
+        fmt::print("  ");
+    }
+    fmt::println("Node: ", node->name, " {");
+    for (struct property* prop = node->properties; prop != nullptr; prop = prop->next_property) {
+        for (int i = 0; i < depth + 1; i++) {
+            fmt::print("  ");
+        }
+        fmt::print("Property: ", prop->name, " = ");
+        switch (prop->type) {
+            case property::type::RAW:
+                fmt::println("RAW (length: ", prop->data.raw.length(), ")");
+                break;
+            case property::type::COMPATIBLE:
+                fmt::print("[");
+                for (size_t i = 0; prop->data.compatible_array[i].length() != 0; i++) {
+                    if (i != 0) {
+                        fmt::print(", ");
+                    }
+                    fmt::print(prop->data.compatible_array[i]);
+                }
+                fmt::println("]");
+                break;
+            case property::type::MODEL:
+                fmt::println(prop->data.model);
+                break;
+            case property::type::PHANDLE:
+                fmt::println(fmt::hex(prop->data.phandle));
+                break;
+            case property::type::STATUS:
+                switch (prop->data.status.value) {
+                    case property::device_status::OKAY:
+                        fmt::println("OKAY");
+                        break;
+                    case property::device_status::DISABLED:
+                        fmt::println("DISABLED");
+                        break;
+                    case property::device_status::RESERVED:
+                        fmt::println("RESERVED");
+                        break;
+                    case property::device_status::FAIL:
+                        fmt::println("FAIL");
+                        break;
+                    case property::device_status::FAIL_WITH_REASON:
+                        fmt::println("FAIL: ", prop->data.status.reason);
+                        break;
+                }
+                break;
+            case property::type::ADDRESS_CELLS:
+                fmt::println(prop->data.address_cells);
+                break;
+            case property::type::SIZE_CELLS:
+                fmt::println(prop->data.size_cells);
+                break;
+            case property::type::DMA_COHERENCE:
+                fmt::println(prop->data.dma_coherence ? "true" : "false");
+                break;
+            case property::type::DEVICE_TYPE:
+                fmt::println(prop->data.device_type);
+                break;
+            case property::type::REG:
+                fmt::println("REG (", prop->data.reg.n_pairs, " pairs)");
+                break;
+            case property::type::RANGES:
+                fmt::println("RANGES (", prop->data.range.n_trips, " trips)");
+                break;
+            case property::type::VIRTUAL_REG:
+                fmt::println(fmt::hex(prop->data.virtual_reg));
+                break;
+            case property::type::INTERRUPT_PARENT:
+                fmt::println(fmt::hex(prop->data.interrupt_parent));
+                break;
+            case property::type::INTERRUPT_CONTROLLER:
+                fmt::println("true");
+                break;
+            case property::type::INTERRUPT_CELLS:
+                fmt::println(prop->data.interrupt_cells);
+                break;
+            case property::type::INTERRUPT_MAP:
+                fmt::println("INTERRUPT_MAP (", prop->data.n_entries, " entries)");
+                break;
+        }
+    }
+
+    for (struct node* child = node->children; child != nullptr; child = child->next_sibling) {
+        print_node_recursive(child, depth + 1);
+    }
+}
+
+void
+print_device_tree()
+{
+
+    if (!initialized) {
+        fmt::println("Device tree not initialized.");
+        return;
+    }
+
+    fmt::println("Printing the device tree:");
+    print_node_recursive(root, 0);
 }
 }

@@ -37,4 +37,14 @@ copy(const void* src, void* dst, size_t count)
         dst_u8[i] = src_u8[i];
     }
 }
+
+size_t
+strlen(const char* src)
+{
+    size_t len = 0;
+    while (src[len] != '\0') {
+        len++;
+    }
+    return len;
+}
 } // namespace mem

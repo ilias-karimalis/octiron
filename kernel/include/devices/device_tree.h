@@ -10,23 +10,7 @@ namespace dt {
 error
 parse_from_blob(const u8* dtb);
 
-// struct device_tree
-// {
-
-//     static result<device_tree> parse_from_blob
-// };
-
-// struct device_tree
-// {
-//     static device_tree parse_from_view(byte_view blob);
-
-//     struct reserved_region
-//     {
-//         paddr_t address;
-//         size_t size;
-//     };
-
-//     dynamic_array<reserved_region> m_reserved_regions;
-// };
+void
+print_device_tree();
 
 }

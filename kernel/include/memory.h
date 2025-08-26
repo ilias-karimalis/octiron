@@ -13,4 +13,7 @@ cmp(const void* lhs, const void* rhs, size_t count);
 void
 copy(const void* src, void* dst, size_t count);
 
+size_t
+strlen(const char* src);
+
 }

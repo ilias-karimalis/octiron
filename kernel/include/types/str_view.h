@@ -1,5 +1,6 @@
 #pragma once
 
+#include "memory.h"
 #include "types/byte_view.h"
 #include <cstring>
 #include <types/number.h>
@@ -19,7 +20,8 @@ public:
       : m_data(literal)
       , m_size(N - 1)
     {
-        static_assert(N - 1 != s_sentinel, "str_view can't represent a string this large (uses -1 for errors).");
+        static_assert(N - 1 != s_sentinel,
+                      "str_view can't represent a string this large (uses -1 for errors).");
     }
 
     /// Constructs a str_view from a const char pointer and a length.
@@ -32,13 +34,16 @@ public:
     /// Constructs a str_view from a null-terminated string.
     static constexpr str_view from_null_term(const char* str)
     {
-        size_t len = 0;
-        for (const char* curr = str; *curr != '\0'; curr++, len++);
-        return { str, len };
+        //        size_t len = 0;
+        //        for (const char* curr = str; *curr != '\0'; curr++, len++);
+        return { str, mem::strlen(str) };
     }
 
     /// Constructs a str_view from a byte_view.
-    static constexpr str_view from_byte_view(byte_view bv) { return { (const char*)bv.data(), bv.length() }; }
+    static constexpr str_view from_byte_view(byte_view bv)
+    {
+        return { (const char*)bv.data(), bv.length() };
+    }
 
     /// Accesses the i-th character.
     constexpr const char& operator[](size_t i) const { return m_data[i]; }
@@ -113,7 +118,8 @@ str_view::compare(str_view s1, str_view s2)
     size_t i = 0;
     while (i < s1.m_size && i < s2.m_size) {
         if (s1.m_data[i] != s2.m_data[i])
-            return static_cast<unsigned char>(s1.m_data[i]) - static_cast<unsigned char>(s2.m_data[i]);
+            return static_cast<unsigned char>(s1.m_data[i]) -
+                   static_cast<unsigned char>(s2.m_data[i]);
         ++i;
     }
     return static_cast<ssize_t>(s1.m_size) - static_cast<ssize_t>(s2.m_size);
